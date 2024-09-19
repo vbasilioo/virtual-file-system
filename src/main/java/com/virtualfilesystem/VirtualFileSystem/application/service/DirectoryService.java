@@ -17,29 +17,38 @@ public class DirectoryService {
 
     @Transactional
     public void saveDirectory(Directory directory) {
-
-        if(directory.getParent() != null){
+        if (directory.getParent() != null) {
             Directory parent = directoryRepository.getDirectoryByPath(directory.getParent().getPath());
             directory.setParent(parent);
         }
-
         saveOrUpdateDirectory(directory);
     }
 
     public void saveOrUpdateDirectory(Directory directory) {
         directoryRepository.saveDirectory(directory);
-
-        for(Directory child : directory.getChildren()){
+        for (Directory child : directory.getChildren()) {
             child.setParent(directory);
-            saveOrUpdateDirectory(child); // Recursividade
+            saveOrUpdateDirectory(child);
         }
     }
 
-    public List<Directory> getAllDirectories(){
+    @Transactional
+    public void deleteDirectory(Long id) {
+        Directory directory = directoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Directory not found"));
+
+        for (Directory child : directory.getChildren()) {
+            deleteDirectory(child.getId());
+        }
+
+        directoryRepository.delete(directory);
+    }
+
+    public List<Directory> getAllDirectories() {
         return directoryRepository.getAllDirectories();
     }
 
-    public Directory getDirectoryByPath(String path){
+    public Directory getDirectoryByPath(String path) {
         return directoryRepository.getDirectoryByPath(path);
     }
 }

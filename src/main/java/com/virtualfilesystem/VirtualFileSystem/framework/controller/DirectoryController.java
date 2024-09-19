@@ -26,7 +26,12 @@ public class DirectoryController {
     }
 
     @GetMapping("/{path}")
-    public Directory getDirectoryByPath(@PathVariable String path){
+    public Directory getDirectoryByPath(@PathVariable String path) {
         return directoryService.getDirectoryByPath(path);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteDirectory(@PathVariable Long id) {
+        directoryService.deleteDirectory(id);
     }
 }
