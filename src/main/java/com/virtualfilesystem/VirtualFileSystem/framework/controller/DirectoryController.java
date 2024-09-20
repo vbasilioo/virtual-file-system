@@ -34,9 +34,8 @@ public class DirectoryController {
     public ResponseEntity<ReturnApi> getDirectoryByPath(@PathVariable String path) {
         Directory directory = directoryService.getDirectoryByPath(path);
 
-        if (directory == null) {
+        if (directory == null)
             throw new ApiException("Diretório não encontrado para o caminho: " + path);
-        }
 
         return ResponseEntity.ok(ReturnApi.success(directory, "Diretório encontrado com sucesso."));
     }
@@ -44,6 +43,7 @@ public class DirectoryController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ReturnApi> deleteDirectory(@PathVariable Long id) {
         directoryService.deleteDirectory(id);
-        return ResponseEntity.ok(ReturnApi.success(null, "Diretório deletado com sucesso."));
+        return ResponseEntity.ok(ReturnApi.success(null, "Diretório excluído com sucesso."));
     }
+
 }

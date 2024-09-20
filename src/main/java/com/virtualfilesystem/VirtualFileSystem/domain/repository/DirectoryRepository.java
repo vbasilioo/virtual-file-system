@@ -11,4 +11,6 @@ public interface DirectoryRepository {
     Directory getDirectoryByPath(String path);
     void delete(Directory directory);
     Optional<Directory> findById(Long id);
+    void deleteById(Long id);
+
 }

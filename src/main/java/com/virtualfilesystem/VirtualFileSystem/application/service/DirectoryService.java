@@ -2,7 +2,9 @@ package com.virtualfilesystem.VirtualFileSystem.application.service;
 
 import com.virtualfilesystem.VirtualFileSystem.domain.model.Directory;
 import com.virtualfilesystem.VirtualFileSystem.domain.repository.DirectoryRepository;
+import com.virtualfilesystem.VirtualFileSystem.infrastructure.exception.ApiException;
 import jakarta.transaction.Transactional;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,20 +37,6 @@ public class DirectoryService {
         return directory;
     }
 
-    @Transactional
-    public void deleteDirectory(Long id) {
-        Directory directory = directoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Directory not found"));
-
-        fileService.deleteFilesByDirectory(directory);
-
-        for (Directory child : directory.getChildren()) {
-            deleteDirectory(child.getId());
-        }
-
-        directoryRepository.delete(directory);
-    }
-
     public List<Directory> getAllDirectories() {
         return directoryRepository.getAllDirectories();
     }
@@ -56,4 +44,20 @@ public class DirectoryService {
     public Directory getDirectoryByPath(String path) {
         return directoryRepository.getDirectoryByPath(path);
     }
+
+    @Transactional
+    public void deleteDirectory(Long id) {
+        Directory directory = directoryRepository.findById(id)
+                .orElseThrow(() -> new ApiException("Diretório não encontrado com ID: " + id));
+
+        deleteRecursively(directory);
+
+        directoryRepository.deleteById(id);
+    }
+
+    private void deleteRecursively(Directory directory) {
+        for (Directory child : directory.getChildren())
+            deleteRecursively(child);
+    }
+
 }

@@ -25,6 +25,8 @@ public class FileController {
             return ReturnApi.success(savedFile, "Arquivo salvo com sucesso.");
         } catch (ApiException ex) {
             throw ex;
+        } catch (Exception ex) {
+            throw new ApiException("Erro ao salvar o arquivo.", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
