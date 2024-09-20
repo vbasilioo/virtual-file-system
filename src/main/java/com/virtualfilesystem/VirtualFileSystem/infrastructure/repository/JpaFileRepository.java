@@ -10,17 +10,22 @@ import java.util.List;
 @Repository
 public interface JpaFileRepository extends FileRepository, JpaRepository<File, Long> {
     @Override
-    default void saveFile(File file){
+    default void saveFile(File file) {
         save(file);
     }
 
     @Override
-    default List<File> getAllFiles(){
+    default void delete(File file) {
+        delete(file);
+    }
+
+    @Override
+    default List<File> getAllFiles() {
         return findAll();
     }
 
     @Override
-    default File getFileByPath(String path){
+    default File getFileByPath(String path) {
         return findByPath(path);
     }
 

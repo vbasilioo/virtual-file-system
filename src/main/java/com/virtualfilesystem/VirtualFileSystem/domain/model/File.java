@@ -12,6 +12,11 @@ public class File {
     private String name;
     private long size;
 
+    @ManyToOne
+    @JoinColumn(name = "directory_id", nullable = false)
+    private Directory directory;
+
+
     public Long getId() {
         return id;
     }
@@ -42,5 +47,13 @@ public class File {
 
     public void setSize(long size) {
         this.size = size;
+    }
+
+    public Directory getDirectory() {
+        return directory;
+    }
+
+    public void setDirectory(Directory directory) {
+        this.directory = directory;
     }
 }

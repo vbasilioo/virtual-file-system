@@ -1,5 +1,6 @@
 package com.virtualfilesystem.VirtualFileSystem.domain.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
@@ -15,9 +16,10 @@ public class Directory {
     private String name;
 
     @ManyToOne
+    @JsonIgnore
     private Directory parent;
 
-    @OneToMany(mappedBy = "parent")
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
     private List<Directory> children = new ArrayList<>();
 
     public Long getId() {

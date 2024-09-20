@@ -10,9 +10,11 @@ import java.util.List;
 @Service
 public class DirectoryService {
     private final DirectoryRepository directoryRepository;
+    private final FileService fileService;
 
-    public DirectoryService(DirectoryRepository directoryRepository) {
+    public DirectoryService(DirectoryRepository directoryRepository, FileService fileService) {
         this.directoryRepository = directoryRepository;
+        this.fileService = fileService;
     }
 
     @Transactional
@@ -36,6 +38,8 @@ public class DirectoryService {
     public void deleteDirectory(Long id) {
         Directory directory = directoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Directory not found"));
+
+        fileService.deleteFilesByDirectory(directory);
 
         for (Directory child : directory.getChildren()) {
             deleteDirectory(child.getId());
