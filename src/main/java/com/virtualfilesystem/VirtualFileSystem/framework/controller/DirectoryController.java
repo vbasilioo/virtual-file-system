@@ -2,6 +2,9 @@ package com.virtualfilesystem.VirtualFileSystem.framework.controller;
 
 import com.virtualfilesystem.VirtualFileSystem.application.service.DirectoryService;
 import com.virtualfilesystem.VirtualFileSystem.domain.model.Directory;
+import com.virtualfilesystem.VirtualFileSystem.infrastructure.exception.ApiException;
+import com.virtualfilesystem.VirtualFileSystem.infrastructure.utils.ReturnApi;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,22 +19,31 @@ public class DirectoryController {
     }
 
     @PostMapping
-    public void saveDirectory(@RequestBody Directory directory) {
-        directoryService.saveDirectory(directory);
+    public ResponseEntity<ReturnApi> saveDirectory(@RequestBody Directory directory) {
+        Directory directorySave = directoryService.saveDirectory(directory);
+        return ResponseEntity.ok(ReturnApi.success(directorySave, "Diretório salvo com sucesso."));
     }
 
     @GetMapping
-    public List<Directory> getAllDirectories() {
-        return directoryService.getAllDirectories();
+    public ResponseEntity<ReturnApi> getAllDirectories() {
+        List<Directory> directories = directoryService.getAllDirectories();
+        return ResponseEntity.ok(ReturnApi.success(directories, "Todos os diretórios foram listados com sucesso."));
     }
 
     @GetMapping("/{path}")
-    public Directory getDirectoryByPath(@PathVariable String path) {
-        return directoryService.getDirectoryByPath(path);
+    public ResponseEntity<ReturnApi> getDirectoryByPath(@PathVariable String path) {
+        Directory directory = directoryService.getDirectoryByPath(path);
+
+        if (directory == null) {
+            throw new ApiException("Diretório não encontrado para o caminho: " + path);
+        }
+
+        return ResponseEntity.ok(ReturnApi.success(directory, "Diretório encontrado com sucesso."));
     }
 
     @DeleteMapping("/{id}")
-    public void deleteDirectory(@PathVariable Long id) {
+    public ResponseEntity<ReturnApi> deleteDirectory(@PathVariable Long id) {
         directoryService.deleteDirectory(id);
+        return ResponseEntity.ok(ReturnApi.success(null, "Diretório deletado com sucesso."));
     }
 }

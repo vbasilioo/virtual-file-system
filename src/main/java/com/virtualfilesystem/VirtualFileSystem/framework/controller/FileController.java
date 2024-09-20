@@ -2,6 +2,9 @@ package com.virtualfilesystem.VirtualFileSystem.framework.controller;
 
 import com.virtualfilesystem.VirtualFileSystem.application.service.FileService;
 import com.virtualfilesystem.VirtualFileSystem.domain.model.File;
+import com.virtualfilesystem.VirtualFileSystem.infrastructure.exception.ApiException;
+import com.virtualfilesystem.VirtualFileSystem.infrastructure.utils.ReturnApi;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,17 +19,28 @@ public class FileController {
     }
 
     @PostMapping
-    public void saveFile(@RequestBody File file){
-        fileService.saveFile(file);
+    public ReturnApi saveFile(@RequestBody File file) {
+        try {
+            File savedFile = fileService.saveFile(file);
+            return ReturnApi.success(savedFile, "Arquivo salvo com sucesso.");
+        } catch (ApiException ex) {
+            throw ex;
+        }
     }
 
     @GetMapping
-    public List<File> getAllFiles() {
-        return fileService.getAllFiles();
+    public ReturnApi getAllFiles() {
+        List<File> files = fileService.getAllFiles();
+        return ReturnApi.success(files, "Arquivos recuperados com sucesso.");
     }
 
     @GetMapping("/{path}")
-    public File getFileByPath(@PathVariable String path){
-        return fileService.getFileByPath(path);
+    public ReturnApi getFileByPath(@PathVariable String path) {
+        try {
+            File file = fileService.getFileByPath(path);
+            return ReturnApi.success(file, "Arquivo recuperado com sucesso.");
+        } catch (ApiException ex) {
+            throw ex;
+        }
     }
 }

@@ -10,8 +10,8 @@ import java.util.List;
 @Repository
 public interface JpaFileRepository extends FileRepository, JpaRepository<File, Long> {
     @Override
-    default void saveFile(File file) {
-        save(file);
+    default File saveFile(File file) {
+        return save(file);
     }
 
     @Override

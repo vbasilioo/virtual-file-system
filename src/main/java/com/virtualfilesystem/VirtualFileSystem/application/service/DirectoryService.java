@@ -18,20 +18,21 @@ public class DirectoryService {
     }
 
     @Transactional
-    public void saveDirectory(Directory directory) {
+    public Directory saveDirectory(Directory directory) {
         if (directory.getParent() != null) {
             Directory parent = directoryRepository.getDirectoryByPath(directory.getParent().getPath());
             directory.setParent(parent);
         }
-        saveOrUpdateDirectory(directory);
+        return saveOrUpdateDirectory(directory);
     }
 
-    public void saveOrUpdateDirectory(Directory directory) {
+    public Directory saveOrUpdateDirectory(Directory directory) {
         directoryRepository.saveDirectory(directory);
         for (Directory child : directory.getChildren()) {
             child.setParent(directory);
             saveOrUpdateDirectory(child);
         }
+        return directory;
     }
 
     @Transactional
