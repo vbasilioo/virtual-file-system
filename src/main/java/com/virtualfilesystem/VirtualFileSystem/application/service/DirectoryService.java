@@ -4,10 +4,10 @@ import com.virtualfilesystem.VirtualFileSystem.domain.model.Directory;
 import com.virtualfilesystem.VirtualFileSystem.domain.repository.DirectoryRepository;
 import com.virtualfilesystem.VirtualFileSystem.infrastructure.exception.ApiException;
 import jakarta.transaction.Transactional;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class DirectoryService {
@@ -23,22 +23,36 @@ public class DirectoryService {
     public Directory saveDirectory(Directory directory) {
         if (directory.getParent() != null) {
             Directory parent = directoryRepository.getDirectoryByPath(directory.getParent().getPath());
-            directory.setParent(parent);
+            if (parent != null) {
+                directory.setParent(parent);
+            } else {
+                throw new ApiException("Parent directory not found for path: " + directory.getParent().getPath());
+            }
         }
-        return saveOrUpdateDirectory(directory);
-    }
 
-    public Directory saveOrUpdateDirectory(Directory directory) {
         directoryRepository.saveDirectory(directory);
+
         for (Directory child : directory.getChildren()) {
             child.setParent(directory);
-            saveOrUpdateDirectory(child);
+
+            Directory existingChild = directoryRepository.getDirectoryByPath(child.getPath());
+            if (existingChild == null) {
+                directoryRepository.saveDirectory(child);
+            } else {
+                child.setId(existingChild.getId());
+                directoryRepository.saveDirectory(child);
+            }
         }
+
         return directory;
     }
 
     public List<Directory> getAllDirectories() {
-        return directoryRepository.getAllDirectories();
+        List<Directory> allDirectories = directoryRepository.getAllDirectories();
+
+        return allDirectories.stream()
+                .filter(directory -> directory.getParent() == null)
+                .collect(Collectors.toList());
     }
 
     public Directory getDirectoryByPath(String path) {
@@ -59,5 +73,4 @@ public class DirectoryService {
         for (Directory child : directory.getChildren())
             deleteRecursively(child);
     }
-
 }
