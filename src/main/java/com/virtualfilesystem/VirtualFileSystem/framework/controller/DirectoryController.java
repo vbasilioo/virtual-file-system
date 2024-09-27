@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/directories")
@@ -48,7 +49,7 @@ public class DirectoryController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ReturnApi> deleteDirectory(@PathVariable Long id) {
+    public ResponseEntity<ReturnApi> deleteDirectory(@PathVariable UUID id) {
         try {
             directoryService.deleteDirectory(id);
             return ResponseEntity.ok(ReturnApi.success(null, "Diretório excluído com sucesso."));
@@ -68,7 +69,7 @@ public class DirectoryController {
     }
 
     @GetMapping("/statistics/file-count/{id}")
-    public ResponseEntity<ReturnApi> getDirectoryStatistics(@PathVariable Long id) {
+    public ResponseEntity<ReturnApi> getDirectoryStatistics(@PathVariable UUID id) {
         try {
             long fileCount = directoryService.getFileCountInDirectory(id);
             return ResponseEntity.ok(ReturnApi.success(Map.of("directoryId", id, "fileCount", fileCount), "Contagem de arquivos no diretório recuperada com sucesso."));
@@ -80,7 +81,7 @@ public class DirectoryController {
     @GetMapping("/statistics/total-file-size")
     public ResponseEntity<ReturnApi> getTotalFileSizeByDirectory() {
         try {
-            Map<Long, Long> totalSizeByDirectory = directoryService.getTotalFileSizeByDirectory();
+            Map<UUID, Long> totalSizeByDirectory = directoryService.getTotalFileSizeByDirectory();
             return ResponseEntity.ok(ReturnApi.success(totalSizeByDirectory, "Tamanho total dos arquivos por diretório recuperado com sucesso."));
         }catch(ApiException ex){
             throw new ApiException(ex.getMessage());

@@ -5,13 +5,14 @@ import jakarta.persistence.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "directories")
 public class Directory {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
     private String path;
     private String name;
 
@@ -22,11 +23,19 @@ public class Directory {
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
     private List<Directory> children = new ArrayList<>();
 
-    public Long getId() {
+    public Directory() {}
+
+    public Directory(String path, String name, Directory parent) {
+        this.path = path;
+        this.name = name;
+        this.parent = parent;
+    }
+
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -61,4 +70,5 @@ public class Directory {
     public void setChildren(List<Directory> children) {
         this.children = children;
     }
+
 }

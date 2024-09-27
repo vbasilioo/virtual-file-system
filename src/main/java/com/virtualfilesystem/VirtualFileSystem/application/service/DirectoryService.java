@@ -12,6 +12,7 @@ import jakarta.transaction.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,19 +26,16 @@ public class DirectoryService {
 
     @Transactional
     public Directory saveDirectory(Directory directory) {
-        // Verifica e associa o diretório pai
         if (directory.getParent() != null) {
             Directory parent = directoryRepository.getDirectoryByPath(directory.getParent().getPath());
             if (parent != null) {
                 directory.setParent(parent);
             } else {
-                throw new ApiException("Parent directory not found for path: " + directory.getParent().getPath());
+                throw new ApiException("Diretório pai não encontrado para caminho: " + directory.getParent().getPath());
             }
         }
 
         directoryRepository.saveDirectory(directory);
-
-        // Processa diretórios filhos
         for (Directory child : directory.getChildren()) {
             child.setParent(directory);
 
@@ -56,7 +54,6 @@ public class DirectoryService {
     public List<Directory> getAllDirectories() {
         List<Directory> allDirectories = directoryRepository.getAllDirectories();
 
-        // Filtra apenas diretórios raiz (sem parent)
         return allDirectories.stream()
                 .filter(directory -> directory.getParent() == null)
                 .collect(Collectors.toList());
@@ -71,11 +68,10 @@ public class DirectoryService {
     }
 
     @Transactional
-    public void deleteDirectory(Long id) {
+    public void deleteDirectory(UUID id) {
         Directory directory = directoryRepository.findById(id)
                 .orElseThrow(() -> new ApiException("Diretório não encontrado com o ID: " + id));
 
-        // Deleta recursivamente todos os filhos
         deleteRecursively(directory);
 
         directoryRepository.deleteById(id);
@@ -92,10 +88,10 @@ public class DirectoryService {
         long totalDirectories = getAllDirectories().size();
         long totalFiles = jpaFileRepository.getAllFiles().size();
 
-        return Map.of("Directories", totalDirectories, "Files", totalFiles);
+        return Map.of("Diretórios", totalDirectories, "Arquivos", totalFiles);
     }
 
-    public long getFileCountInDirectory(Long id) {
+    public long getFileCountInDirectory(UUID id) {
         Directory directory = directoryRepository.findById(id)
                 .orElseThrow(() -> new ApiException("Diretório não encontrado com o ID: " + id));
 
@@ -104,8 +100,8 @@ public class DirectoryService {
                 .count();
     }
 
-    public Map<Long, Long> getTotalFileSizeByDirectory() {
-        Map<Long, Long> totalSizeByDirectory = new HashMap<>();
+    public Map<UUID, Long> getTotalFileSizeByDirectory() {
+        Map<UUID, Long> totalSizeByDirectory = new HashMap<>();
 
         List<File> files = jpaFileRepository.getAllFiles();
         for (File file : files) {
@@ -118,4 +114,5 @@ public class DirectoryService {
 
         return totalSizeByDirectory;
     }
+
 }
