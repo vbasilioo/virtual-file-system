@@ -5,9 +5,11 @@ import com.virtualfilesystem.VirtualFileSystem.domain.model.File;
 import com.virtualfilesystem.VirtualFileSystem.infrastructure.exception.ApiException;
 import com.virtualfilesystem.VirtualFileSystem.infrastructure.utils.ReturnApi;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/files")
@@ -44,5 +46,11 @@ public class FileController {
         } catch (ApiException ex) {
             throw ex;
         }
+    }
+
+    @GetMapping("/statistics/files-by-extension")
+    public ResponseEntity<ReturnApi> getFileCountByExtension() {
+        Map<String, Long> fileCountByExtension = fileService.getFileCountByExtension();
+        return ResponseEntity.ok(ReturnApi.success(fileCountByExtension, "Contagem de arquivos por extensão recuperada com sucesso."));
     }
 }

@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/directories")
@@ -46,4 +47,22 @@ public class DirectoryController {
         return ResponseEntity.ok(ReturnApi.success(null, "Diretório excluído com sucesso."));
     }
 
+    @GetMapping("/statistics/overview")
+    public ResponseEntity<ReturnApi> getOverviewStatistics(){
+        Map<String, Long> statistics = directoryService.getOverviewStatistics();
+        return ResponseEntity.ok(ReturnApi.success(statistics, "Estatísticas gerais recuperadas com sucesso."));
+    }
+
+    @GetMapping("/statistics/file-count/{id}")
+    public ResponseEntity<ReturnApi> getDirectoryStatistics(@PathVariable Long id) {
+        long fileCount = directoryService.getFileCountInDirectory(id);
+        return ResponseEntity.ok(ReturnApi.success(Map.of("directoryId", id, "fileCount", fileCount),
+                "Contagem de arquivos no diretório recuperada com sucesso."));
+    }
+
+    @GetMapping("/statistics/total-file-size")
+    public ResponseEntity<ReturnApi> getTotalFileSizeByDirectory() {
+        Map<Long, Long> totalSizeByDirectory = directoryService.getTotalFileSizeByDirectory();
+        return ResponseEntity.ok(ReturnApi.success(totalSizeByDirectory, "Tamanho total dos arquivos por diretório recuperado com sucesso."));
+    }
 }
