@@ -1,7 +1,9 @@
 package com.virtualfilesystem.VirtualFileSystem.application.service;
 
+import com.virtualfilesystem.VirtualFileSystem.domain.DTO.Directory.DirectoryDTO;
 import com.virtualfilesystem.VirtualFileSystem.domain.model.Directory;
 import com.virtualfilesystem.VirtualFileSystem.domain.model.File;
+import com.virtualfilesystem.VirtualFileSystem.domain.model.User;
 import com.virtualfilesystem.VirtualFileSystem.domain.repository.DirectoryRepository;
 import com.virtualfilesystem.VirtualFileSystem.infrastructure.exception.ApiException;
 import com.virtualfilesystem.VirtualFileSystem.infrastructure.repository.JpaFileRepository;
@@ -25,47 +27,73 @@ public class DirectoryService {
     private JpaFileRepository jpaFileRepository;
 
     @Transactional
-    public Directory saveDirectory(Directory directory) {
-        if (directory.getParent() != null) {
-            Directory parent = directoryRepository.getDirectoryByPath(directory.getParent().getPath());
-            if (parent != null) {
-                directory.setParent(parent);
-            } else {
-                throw new ApiException("Diretório pai não encontrado para caminho: " + directory.getParent().getPath());
-            }
+    public DirectoryDTO saveDirectory(DirectoryDTO directoryDTO, User user) {
+        Directory directory = new Directory(directoryDTO.path(), directoryDTO.name(), user);
+        if (directoryDTO.parentId() != null) {
+            Directory parent = directoryRepository.findById(directoryDTO.parentId())
+                    .orElseThrow(() -> new ApiException("Diretório pai não encontrado para ID: " + directoryDTO.parentId()));
+            directory.setParent(parent);
         }
 
         directoryRepository.saveDirectory(directory);
-        for (Directory child : directory.getChildren()) {
-            child.setParent(directory);
 
-            Directory existingChild = directoryRepository.getDirectoryByPath(child.getPath());
-            if (existingChild == null) {
-                directoryRepository.saveDirectory(child);
-            } else {
-                child.setId(existingChild.getId());
-                directoryRepository.saveDirectory(child);
-            }
+        for (UUID childId : directoryDTO.childrenIds()) {
+            Directory child = directoryRepository.findById(childId)
+                    .orElseThrow(() -> new ApiException("Diretório filho não encontrado com ID: " + childId));
+            child.setParent(directory);
+            directoryRepository.saveDirectory(child);
         }
 
-        return directory;
+        return new DirectoryDTO(
+                directory.getId(),
+                directory.getName(),
+                directory.getPath(),
+                directory.getParent() != null ? directory.getParent().getId() : null,
+                directoryDTO.childrenIds()
+        );
     }
 
-    public List<Directory> getAllDirectories() {
+    public List<DirectoryDTO> getAllDirectories() {
         List<Directory> allDirectories = directoryRepository.getAllDirectories();
 
         return allDirectories.stream()
                 .filter(directory -> directory.getParent() == null)
+                .map(directory -> {
+                    List<UUID> childrenIds = directory.getChildren().stream()
+                            .map(Directory::getId)
+                            .collect(Collectors.toList());
+
+                    return new DirectoryDTO(
+                            directory.getId(),
+                            directory.getName(),
+                            directory.getPath(),
+                            null,
+                            childrenIds
+                    );
+                })
                 .collect(Collectors.toList());
     }
 
-    public Directory getDirectoryByPath(String path) {
+
+    public DirectoryDTO getDirectoryByPath(String path) {
         Directory directory = directoryRepository.getDirectoryByPath(path);
         if (directory == null) {
             throw new ApiException("Diretório não encontrado para o caminho: " + path);
         }
-        return directory;
+
+        List<UUID> childrenIds = directory.getChildren().stream()
+                .map(Directory::getId)
+                .collect(Collectors.toList());
+
+        return new DirectoryDTO(
+                directory.getId(),
+                directory.getName(),
+                directory.getPath(),
+                directory.getParent() != null ? directory.getParent().getId() : null,
+                childrenIds
+        );
     }
+
 
     @Transactional
     public void deleteDirectory(UUID id) {
@@ -73,7 +101,6 @@ public class DirectoryService {
                 .orElseThrow(() -> new ApiException("Diretório não encontrado com o ID: " + id));
 
         deleteRecursively(directory);
-
         directoryRepository.deleteById(id);
     }
 
@@ -114,5 +141,4 @@ public class DirectoryService {
 
         return totalSizeByDirectory;
     }
-
 }

@@ -55,6 +55,5 @@ public class AuthenticationController {
         }catch(ApiException ex){
             throw new ApiException(ex.getMessage());
         }
-
     }
 }

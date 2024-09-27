@@ -1,11 +1,15 @@
 package com.virtualfilesystem.VirtualFileSystem.framework.controller;
 
 import com.virtualfilesystem.VirtualFileSystem.application.service.DirectoryService;
+import com.virtualfilesystem.VirtualFileSystem.domain.DTO.Directory.DirectoryDTO;
 import com.virtualfilesystem.VirtualFileSystem.domain.model.Directory;
+import com.virtualfilesystem.VirtualFileSystem.domain.model.User;
 import com.virtualfilesystem.VirtualFileSystem.infrastructure.exception.ApiException;
 import com.virtualfilesystem.VirtualFileSystem.infrastructure.utils.ReturnApi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,19 +23,23 @@ public class DirectoryController {
     DirectoryService directoryService;
 
     @PostMapping
-    public ResponseEntity<ReturnApi> saveDirectory(@RequestBody Directory directory) {
+    public ResponseEntity<ReturnApi> saveDirectory(@RequestBody DirectoryDTO directory) {
         try {
-            Directory directorySaved = directoryService.saveDirectory(directory);
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            User user = (User) authentication.getPrincipal();
+
+            DirectoryDTO directorySaved = directoryService.saveDirectory(directory, user);
             return ResponseEntity.ok(ReturnApi.success(directorySaved, "Diretório salvo com sucesso."));
-        }catch(ApiException ex){
+        } catch (ApiException ex) {
             throw new ApiException(ex.getMessage());
         }
     }
 
+
     @GetMapping
     public ResponseEntity<ReturnApi> getAllDirectories() {
         try {
-            List<Directory> directories = directoryService.getAllDirectories();
+            List<DirectoryDTO> directories = directoryService.getAllDirectories();
             return ResponseEntity.ok(ReturnApi.success(directories, "Todos os diretórios foram listados com sucesso."));
         }catch(ApiException ex){
             throw new ApiException(ex.getMessage());
@@ -41,7 +49,7 @@ public class DirectoryController {
     @GetMapping("/{path}")
     public ResponseEntity<ReturnApi> getDirectoryByPath(@PathVariable String path) {
         try {
-            Directory directory = directoryService.getDirectoryByPath(path);
+            DirectoryDTO directory = directoryService.getDirectoryByPath(path);
             return ResponseEntity.ok(ReturnApi.success(directory, "Diretório encontrado com sucesso."));
         }catch(ApiException ex){
             throw new ApiException(ex.getMessage());

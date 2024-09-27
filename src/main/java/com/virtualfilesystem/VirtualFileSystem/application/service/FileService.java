@@ -1,7 +1,9 @@
 package com.virtualfilesystem.VirtualFileSystem.application.service;
 
+import com.virtualfilesystem.VirtualFileSystem.domain.model.Configuration;
 import com.virtualfilesystem.VirtualFileSystem.domain.model.File;
 import com.virtualfilesystem.VirtualFileSystem.domain.model.Directory;
+import com.virtualfilesystem.VirtualFileSystem.domain.repository.ConfigurationRepository;
 import com.virtualfilesystem.VirtualFileSystem.domain.repository.FileRepository;
 import com.virtualfilesystem.VirtualFileSystem.domain.repository.DirectoryRepository;
 import com.virtualfilesystem.VirtualFileSystem.infrastructure.exception.ApiException;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,12 +22,25 @@ public class FileService {
     FileRepository fileRepository;
     @Autowired
     DirectoryRepository directoryRepository;
+    @Autowired
+    ConfigurationRepository configurationRepository;
 
     public File saveFile(File file) {
-        if (file.getDirectory() == null || directoryRepository.findById(file.getDirectory().getId()).isEmpty())
+        if(file.getDirectory() == null || directoryRepository.findById(file.getDirectory().getId()).isEmpty())
             throw new ApiException("Diretório pai não existe.", HttpStatus.BAD_REQUEST);
 
-        return fileRepository.saveFile(file);
+        Configuration config = configurationRepository.findById(UUID.fromString("config-uuid-aqui"))
+                .orElseThrow(() -> new ApiException("Configuração não encontrada", HttpStatus.INTERNAL_SERVER_ERROR));
+
+        if(!config.hasEnoughMemory(file.getSize()))
+            throw new ApiException("Espaço insuficiente para salvar o arquivo.", HttpStatus.BAD_REQUEST);
+
+        File savedFile = fileRepository.saveFile(file);
+
+        config.increaseUsedMemory(file.getSize());
+        configurationRepository.save(config);
+
+        return savedFile;
     }
 
     public void deleteFilesByDirectory(Directory directory) {
