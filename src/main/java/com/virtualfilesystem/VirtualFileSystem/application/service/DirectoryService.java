@@ -5,10 +5,10 @@ import com.virtualfilesystem.VirtualFileSystem.domain.model.File;
 import com.virtualfilesystem.VirtualFileSystem.domain.repository.DirectoryRepository;
 import com.virtualfilesystem.VirtualFileSystem.infrastructure.exception.ApiException;
 import com.virtualfilesystem.VirtualFileSystem.infrastructure.repository.JpaFileRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import jakarta.transaction.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,15 +16,16 @@ import java.util.stream.Collectors;
 
 @Service
 public class DirectoryService {
+
     @Autowired
-    DirectoryRepository directoryRepository;
+    private DirectoryRepository directoryRepository;
+
     @Autowired
-    FileService fileService;
-    @Autowired
-    JpaFileRepository jpaFileRepository;
+    private JpaFileRepository jpaFileRepository;
 
     @Transactional
     public Directory saveDirectory(Directory directory) {
+        // Verifica e associa o diretório pai
         if (directory.getParent() != null) {
             Directory parent = directoryRepository.getDirectoryByPath(directory.getParent().getPath());
             if (parent != null) {
@@ -36,6 +37,7 @@ public class DirectoryService {
 
         directoryRepository.saveDirectory(directory);
 
+        // Processa diretórios filhos
         for (Directory child : directory.getChildren()) {
             child.setParent(directory);
 
@@ -54,38 +56,46 @@ public class DirectoryService {
     public List<Directory> getAllDirectories() {
         List<Directory> allDirectories = directoryRepository.getAllDirectories();
 
+        // Filtra apenas diretórios raiz (sem parent)
         return allDirectories.stream()
                 .filter(directory -> directory.getParent() == null)
                 .collect(Collectors.toList());
     }
 
     public Directory getDirectoryByPath(String path) {
-        return directoryRepository.getDirectoryByPath(path);
+        Directory directory = directoryRepository.getDirectoryByPath(path);
+        if (directory == null) {
+            throw new ApiException("Diretório não encontrado para o caminho: " + path);
+        }
+        return directory;
     }
 
     @Transactional
     public void deleteDirectory(Long id) {
         Directory directory = directoryRepository.findById(id)
-                .orElseThrow(() -> new ApiException("Diretório não encontrado com ID: " + id));
+                .orElseThrow(() -> new ApiException("Diretório não encontrado com o ID: " + id));
 
+        // Deleta recursivamente todos os filhos
         deleteRecursively(directory);
 
         directoryRepository.deleteById(id);
     }
 
     private void deleteRecursively(Directory directory) {
-        for (Directory child : directory.getChildren())
+        for (Directory child : directory.getChildren()) {
             deleteRecursively(child);
+        }
+        directoryRepository.deleteById(directory.getId());
     }
 
-    public Map<String, Long> getOverviewStatistics(){
+    public Map<String, Long> getOverviewStatistics() {
         long totalDirectories = getAllDirectories().size();
         long totalFiles = jpaFileRepository.getAllFiles().size();
 
         return Map.of("Directories", totalDirectories, "Files", totalFiles);
     }
 
-    public long getFileCountInDirectory(Long id){
+    public long getFileCountInDirectory(Long id) {
         Directory directory = directoryRepository.findById(id)
                 .orElseThrow(() -> new ApiException("Diretório não encontrado com o ID: " + id));
 
@@ -94,11 +104,11 @@ public class DirectoryService {
                 .count();
     }
 
-    public Map<Long, Long> getTotalFileSizeByDirectory(){
+    public Map<Long, Long> getTotalFileSizeByDirectory() {
         Map<Long, Long> totalSizeByDirectory = new HashMap<>();
 
         List<File> files = jpaFileRepository.getAllFiles();
-        for(File file : files) {
+        for (File file : files) {
             totalSizeByDirectory.merge(
                     file.getDirectory().getId(),
                     file.getSize(),

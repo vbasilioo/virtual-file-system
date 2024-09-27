@@ -15,7 +15,7 @@ import java.util.Date;
 
 @Service
 public class TokenService {
-    @Value("{api.security.token.secret}")
+    @Value("${api.security.token.secret}")
     private String secret;
 
     public String generateToken(User user) {
@@ -25,7 +25,7 @@ public class TokenService {
                     .withIssuer("auth-api")
                     .withSubject(user.getUsername())
                     .withIssuedAt(new Date())
-                    .withExpiresAt(Instant.ofEpochSecond(10000))
+                    .withExpiresAt(Date.from(Instant.now().plusSeconds(3600)))
                     .sign(algorithm);
             return token;
         }catch(JWTCreationException ex){
@@ -40,7 +40,7 @@ public class TokenService {
                     .withIssuer("auth-api")
                     .build()
                     .verify(token)
-                    .getSignature();
+                    .getSubject();
         }catch(JWTVerificationException ex){
             throw new RuntimeException("Erro ao verificar token.", ex);
         }

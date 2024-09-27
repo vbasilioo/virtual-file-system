@@ -26,16 +26,18 @@ public class FileController {
             File savedFile = fileService.saveFile(file);
             return ReturnApi.success(savedFile, "Arquivo salvo com sucesso.");
         } catch (ApiException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            throw new ApiException("Erro ao salvar o arquivo.", HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new ApiException(ex.getMessage());
         }
     }
 
     @GetMapping
     public ReturnApi getAllFiles() {
-        List<File> files = fileService.getAllFiles();
-        return ReturnApi.success(files, "Arquivos recuperados com sucesso.");
+        try {
+            List<File> files = fileService.getAllFiles();
+            return ReturnApi.success(files, "Arquivos recuperados com sucesso.");
+        }catch(ApiException ex){
+            throw new ApiException(ex.getMessage());
+        }
     }
 
     @GetMapping("/{path}")
@@ -44,13 +46,17 @@ public class FileController {
             File file = fileService.getFileByPath(path);
             return ReturnApi.success(file, "Arquivo recuperado com sucesso.");
         } catch (ApiException ex) {
-            throw ex;
+            throw new ApiException(ex.getMessage());
         }
     }
 
     @GetMapping("/statistics/files-by-extension")
     public ResponseEntity<ReturnApi> getFileCountByExtension() {
-        Map<String, Long> fileCountByExtension = fileService.getFileCountByExtension();
-        return ResponseEntity.ok(ReturnApi.success(fileCountByExtension, "Contagem de arquivos por extensão recuperada com sucesso."));
+        try {
+            Map<String, Long> fileCountByExtension = fileService.getFileCountByExtension();
+            return ResponseEntity.ok(ReturnApi.success(fileCountByExtension, "Contagem de arquivos por extensão recuperada com sucesso."));
+        }catch(ApiException ex){
+            throw new ApiException(ex.getMessage());
+        }
     }
 }

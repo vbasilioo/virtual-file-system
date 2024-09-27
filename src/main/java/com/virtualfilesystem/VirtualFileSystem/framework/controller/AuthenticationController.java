@@ -4,7 +4,9 @@ import com.virtualfilesystem.VirtualFileSystem.domain.DTO.User.AuthenticationDTO
 import com.virtualfilesystem.VirtualFileSystem.domain.DTO.User.RegisterDTO;
 import com.virtualfilesystem.VirtualFileSystem.domain.model.User;
 import com.virtualfilesystem.VirtualFileSystem.domain.repository.UserRepository;
+import com.virtualfilesystem.VirtualFileSystem.infrastructure.exception.ApiException;
 import com.virtualfilesystem.VirtualFileSystem.infrastructure.security.TokenService;
+import com.virtualfilesystem.VirtualFileSystem.infrastructure.utils.ReturnApi;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -29,22 +31,30 @@ public class AuthenticationController {
 
     @PostMapping("/login")
     public ResponseEntity login(@RequestBody @Valid AuthenticationDTO data){
-        var usernamePassword = new UsernamePasswordAuthenticationToken(data.username(), data.password());
-        var auth = this.authenticationManager.authenticate(usernamePassword);
+        try{
+            var usernamePassword = new UsernamePasswordAuthenticationToken(data.username(), data.password());
+            var auth = this.authenticationManager.authenticate(usernamePassword);
 
-        var token = tokenService.generateToken((User) auth.getPrincipal());
-
-        return ResponseEntity.ok().body(token);
+            var token = tokenService.generateToken((User) auth.getPrincipal());
+            return ResponseEntity.ok(ReturnApi.success(token, "Login realizado com sucesso."));
+        }catch(ApiException ex){
+            throw new ApiException(ex.getMessage());
+        }
     }
 
     @PostMapping("/register")
     public ResponseEntity register(@RequestBody @Valid RegisterDTO data){
-        if(this.userRepository.findByUsername(data.username()) != null) return ResponseEntity.badRequest().build();
+        try{
+            if(this.userRepository.findByUsername(data.username()) != null) return ResponseEntity.ok(ReturnApi.error("Nome de usuário já existente."));
 
-        String encryptedPassword = new BCryptPasswordEncoder().encode(data.password());
-        User newUser = new User(data.username(), encryptedPassword, data.role());
+            String encryptedPassword = new BCryptPasswordEncoder().encode(data.password());
+            User user = new User(data.username(), encryptedPassword, data.role());
 
-        this.userRepository.save(newUser);
-        return ResponseEntity.ok().body(newUser);
+            this.userRepository.save(user);
+            return ResponseEntity.ok(ReturnApi.success(user, "Usuário criado com sucesso."));
+        }catch(ApiException ex){
+            throw new ApiException(ex.getMessage());
+        }
+
     }
 }
