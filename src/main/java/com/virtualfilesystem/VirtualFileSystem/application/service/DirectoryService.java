@@ -11,10 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,6 +27,7 @@ public class DirectoryService {
     @Transactional
     public DirectoryDTO saveDirectory(DirectoryDTO directoryDTO, User user) {
         Directory directory = new Directory(directoryDTO.path(), directoryDTO.name(), user);
+
         if (directoryDTO.parentId() != null) {
             Directory parent = directoryRepository.findById(directoryDTO.parentId())
                     .orElseThrow(() -> new ApiException("Diretório pai não encontrado para ID: " + directoryDTO.parentId()));
@@ -37,11 +36,8 @@ public class DirectoryService {
 
         directoryRepository.saveDirectory(directory);
 
-        for (UUID childId : directoryDTO.childrenIds()) {
-            Directory child = directoryRepository.findById(childId)
-                    .orElseThrow(() -> new ApiException("Diretório filho não encontrado com ID: " + childId));
-            child.setParent(directory);
-            directoryRepository.saveDirectory(child);
+        for (DirectoryDTO childDTO : directoryDTO.children()) {
+            saveChildDirectory(childDTO, directory, user);
         }
 
         return new DirectoryDTO(
@@ -49,8 +45,19 @@ public class DirectoryService {
                 directory.getName(),
                 directory.getPath(),
                 directory.getParent() != null ? directory.getParent().getId() : null,
-                directoryDTO.childrenIds()
+                new ArrayList<>()
         );
+    }
+
+    private void saveChildDirectory(DirectoryDTO childDTO, Directory parent, User user) {
+        Directory child = new Directory(childDTO.path(), childDTO.name(), user);
+        child.setParent(parent);
+
+        directoryRepository.saveDirectory(child);
+
+        for (DirectoryDTO grandchildDTO : childDTO.children()) {
+            saveChildDirectory(grandchildDTO, child, user);
+        }
     }
 
     public List<DirectoryDTO> getAllDirectories() {
@@ -58,31 +65,13 @@ public class DirectoryService {
 
         return allDirectories.stream()
                 .filter(directory -> directory.getParent() == null)
-                .map(directory -> {
-                    List<UUID> childrenIds = directory.getChildren().stream()
-                            .map(Directory::getId)
-                            .collect(Collectors.toList());
-
-                    return new DirectoryDTO(
-                            directory.getId(),
-                            directory.getName(),
-                            directory.getPath(),
-                            null,
-                            childrenIds
-                    );
-                })
+                .map(directory -> mapToDirectoryDTO(directory))
                 .collect(Collectors.toList());
     }
 
-
-    public DirectoryDTO getDirectoryByPath(String path) {
-        Directory directory = directoryRepository.getDirectoryByPath(path);
-        if (directory == null) {
-            throw new ApiException("Diretório não encontrado para o caminho: " + path);
-        }
-
-        List<UUID> childrenIds = directory.getChildren().stream()
-                .map(Directory::getId)
+    private DirectoryDTO mapToDirectoryDTO(Directory directory) {
+        List<DirectoryDTO> childrenDTOs = directory.getChildren().stream()
+                .map(this::mapToDirectoryDTO)
                 .collect(Collectors.toList());
 
         return new DirectoryDTO(
@@ -90,10 +79,28 @@ public class DirectoryService {
                 directory.getName(),
                 directory.getPath(),
                 directory.getParent() != null ? directory.getParent().getId() : null,
-                childrenIds
+                childrenDTOs
         );
     }
 
+    public DirectoryDTO getDirectoryByPath(String path) {
+        Directory directory = directoryRepository.getDirectoryByPath(path);
+        if (directory == null) {
+            throw new ApiException("Diretório não encontrado para o caminho: " + path);
+        }
+
+        List<DirectoryDTO> childrenDTOs = directory.getChildren().stream()
+                .map(this::mapToDirectoryDTO)
+                .collect(Collectors.toList());
+
+        return new DirectoryDTO(
+                directory.getId(),
+                directory.getName(),
+                directory.getPath(),
+                directory.getParent() != null ? directory.getParent().getId() : null,
+                childrenDTOs
+        );
+    }
 
     @Transactional
     public void deleteDirectory(UUID id) {

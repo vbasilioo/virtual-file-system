@@ -29,7 +29,7 @@ public class FileService {
         if(file.getDirectory() == null || directoryRepository.findById(file.getDirectory().getId()).isEmpty())
             throw new ApiException("Diretório pai não existe.", HttpStatus.BAD_REQUEST);
 
-        Configuration config = configurationRepository.findById(UUID.fromString("config-uuid-aqui"))
+        Configuration config = configurationRepository.findById(UUID.fromString(UUID.randomUUID().toString()))
                 .orElseThrow(() -> new ApiException("Configuração não encontrada", HttpStatus.INTERNAL_SERVER_ERROR));
 
         if(!config.hasEnoughMemory(file.getSize()))

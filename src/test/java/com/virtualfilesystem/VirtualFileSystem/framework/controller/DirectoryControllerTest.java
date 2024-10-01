@@ -1,7 +1,10 @@
 package com.virtualfilesystem.VirtualFileSystem.framework.controller;
 
 import com.virtualfilesystem.VirtualFileSystem.application.service.DirectoryService;
+import com.virtualfilesystem.VirtualFileSystem.domain.DTO.Directory.DirectoryDTO;
 import com.virtualfilesystem.VirtualFileSystem.domain.model.Directory;
+import com.virtualfilesystem.VirtualFileSystem.domain.model.User;
+import com.virtualfilesystem.VirtualFileSystem.domain.model.UserRole;
 import com.virtualfilesystem.VirtualFileSystem.infrastructure.utils.ReturnApi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,9 +33,13 @@ class DirectoryControllerTest {
 
     @Test
     void testSaveDirectorySuccess() {
-        Directory parentDirectory = new Directory("/path/to", "parentDirectory", null);
-        Directory directory = new Directory("/path/to/directory", "directoryName", parentDirectory);
-        when(directoryService.saveDirectory(directory)).thenReturn(directory);
+        User user = new User("testUser", "password", UserRole.USER);
+        user.setId(UUID.randomUUID());
+
+        DirectoryDTO parentDirectory = new DirectoryDTO(null, "parentDirectory", "/path/to", null, new ArrayList<>());
+        DirectoryDTO directory = new DirectoryDTO(null, "directoryName", "/path/to/directory", null, new ArrayList<>());
+
+        when(directoryService.saveDirectory(directory, user)).thenReturn(directory);
 
         ResponseEntity<ReturnApi> response = directoryController.saveDirectory(directory);
 
@@ -42,15 +49,18 @@ class DirectoryControllerTest {
 
     @Test
     void testGetAllDirectoriesSuccess() {
-        Directory dir1 = new Directory("/path/to/Dir1", "Dir1", null);
-        Directory dir2 = new Directory("/path/to/Dir2", "Dir2", null);
+        DirectoryDTO dir1 = new DirectoryDTO(UUID.randomUUID(), "Dir1", "/path/to/Dir1", null, new ArrayList<>());
+        DirectoryDTO dir2 = new DirectoryDTO(UUID.randomUUID(), "Dir2", "/path/to/Dir2", null, new ArrayList<>());
+
         when(directoryService.getAllDirectories()).thenReturn(Arrays.asList(dir1, dir2));
 
         ResponseEntity<ReturnApi> response = directoryController.getAllDirectories();
 
         assertEquals(200, response.getStatusCodeValue());
-        assertEquals(2, ((List<Directory>) response.getBody().getData()).size());
+        assertEquals(2, ((List<DirectoryDTO>) response.getBody().getData()).size());
+        assertEquals("Todos os diretórios foram listados com sucesso.", response.getBody().getMessage());
     }
+
 
     @Test
     void testGetAllDirectoriesEmpty() {
@@ -65,15 +75,18 @@ class DirectoryControllerTest {
     @Test
     void testGetDirectoryByPathSuccess() {
         String path = "/path/to/directory";
-        Directory directory = new Directory(path, "directoryName", null);
-        when(directoryService.getDirectoryByPath(path)).thenReturn(directory);
+
+        DirectoryDTO directoryDTO = new DirectoryDTO(UUID.randomUUID(), "directoryName", path, null, new ArrayList<>());
+
+        when(directoryService.getDirectoryByPath(path)).thenReturn(directoryDTO);
 
         ResponseEntity<ReturnApi> response = directoryController.getDirectoryByPath(path);
 
         assertEquals(200, response.getStatusCodeValue());
         assertEquals("Diretório encontrado com sucesso.", response.getBody().getMessage());
-        assertEquals(directory, response.getBody().getData());
+        assertEquals(directoryDTO, response.getBody().getData());
     }
+
 
     @Test
     void testDeleteDirectorySuccess() {

@@ -1,6 +1,7 @@
 package com.virtualfilesystem.VirtualFileSystem.framework.controller;
 
 import com.virtualfilesystem.VirtualFileSystem.domain.DTO.User.AuthenticationDTO;
+import com.virtualfilesystem.VirtualFileSystem.domain.DTO.User.LoginResponseDTO;
 import com.virtualfilesystem.VirtualFileSystem.domain.DTO.User.RegisterDTO;
 import com.virtualfilesystem.VirtualFileSystem.domain.model.User;
 import com.virtualfilesystem.VirtualFileSystem.domain.repository.UserRepository;
@@ -30,14 +31,18 @@ public class AuthenticationController {
     private TokenService tokenService;
 
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody @Valid AuthenticationDTO data){
-        try{
+    public ResponseEntity login(@RequestBody @Valid AuthenticationDTO data) {
+        try {
             var usernamePassword = new UsernamePasswordAuthenticationToken(data.username(), data.password());
             var auth = this.authenticationManager.authenticate(usernamePassword);
 
-            var token = tokenService.generateToken((User) auth.getPrincipal());
-            return ResponseEntity.ok(ReturnApi.success(token, "Login realizado com sucesso."));
-        }catch(ApiException ex){
+            var user = (User) auth.getPrincipal();
+            var token = tokenService.generateToken(user);
+
+            LoginResponseDTO response = new LoginResponseDTO(token, user);
+
+            return ResponseEntity.ok(ReturnApi.success(response, "Login realizado com sucesso."));
+        } catch (ApiException ex) {
             throw new ApiException(ex.getMessage());
         }
     }

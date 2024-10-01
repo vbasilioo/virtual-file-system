@@ -88,4 +88,8 @@ public class User implements UserDetails {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+    public void setId(UUID uuid) {
+
+    }
 }
